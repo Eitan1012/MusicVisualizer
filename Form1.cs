@@ -10,6 +10,8 @@ public partial class Form1 : Form
     private TrackBar _progressBar = new TrackBar();
     private bool _isDragging = false;
     private Label _audioLevelLabel = new Label();
+    private Label _spectrumLabel = new Label();
+    private Label _bandsLabel = new Label();
     public Form1()
     {
         InitializeComponent();
@@ -51,6 +53,12 @@ public partial class Form1 : Form
         _audioLevelLabel.SetBounds(20, 260, 300, 30);
         _audioLevelLabel.Font = new Font("Segoe UI", 14);
         Controls.Add(_audioLevelLabel);
+        _spectrumLabel.Text = "Spectrum: Bass: 0 / Treble: 0";
+        _spectrumLabel.SetBounds(20, 300, 400, 30);
+        Controls.Add(_spectrumLabel);
+        _bandsLabel.Text = "Bands: 0 / 0 / 0";
+        _bandsLabel.SetBounds(20, 340, 500, 30);
+        Controls.Add(_bandsLabel);
 
         _timer.Interval = 100;
         _timer.Tick += Timer_Tick;
@@ -118,6 +126,33 @@ public partial class Form1 : Form
                 level = Math.Max(level, Math.Abs(sample));
             }
             _audioLevelLabel.Text = $"Audio Level: {level:F3}";
+            float[] spectrum = _player.GetSpectrum();
+            if (spectrum.Length == 0)
+        {
+            return;
+        }
+        float bass = 0;
+        float treble = 0;
+
+        for (int i = 2; i <= 12; i++)
+        {
+            bass += spectrum[i];
+        }
+
+        bass /= 11;
+
+        for (int i = 100; i < spectrum.Length; i++)
+        {
+            treble += spectrum[i];
+        }
+        treble /= 201;
+        _spectrumLabel.Text = $"Spectrum: Bass: {bass:F6} / Treble: {treble:F6}";
+
+        float[] bands = _player.GetBands();
+        if (bands.Length == 64)
+        {
+            _bandsLabel.Text = $"Bands: {bands[0]:F6} / {bands[8]:F6} / {bands[16]:F6} / {bands[24]:F6}";
+        }
     }
     private void ProgressBar_Scroll(object sender, EventArgs e)
     {

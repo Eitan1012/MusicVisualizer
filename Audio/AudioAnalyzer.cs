@@ -1,4 +1,5 @@
 using NAudio.Wave;
+using NAudio.Dsp;
 
 namespace MusicVisualizer.Audio;
 
@@ -6,6 +7,7 @@ public class AudioAnalyzer : ISampleProvider
 {
     private ISampleProvider _source;
     private float[] _sampels = new float[2048];
+    private float[] _smoothedBands = new float[64];
     private int _index = 0;
     private readonly object _lock = new object();
 
@@ -47,5 +49,45 @@ public class AudioAnalyzer : ISampleProvider
             }
         }
         return result;
+    }
+
+    public float[] GetSpectrum()
+    {
+        float[] samples = GetSamples();
+        int size = samples.Length;
+        Complex[] fftBuffer = new Complex[size];
+        for (int i = 0; i < size; i++)
+        {
+            fftBuffer[i].X = (float)(samples[i] * FastFourierTransform.HammingWindow(i, size));
+            fftBuffer[i].Y = 0;
+        }
+        FastFourierTransform.FFT(true, 11, fftBuffer);
+        float[] spectrum = new float[size / 2];
+
+        for (int i = 0; i < spectrum.Length; i++)
+        {
+            float real = fftBuffer[i].X;
+            spectrum[i] = (float)Math.Sqrt(fftBuffer[i].X * fftBuffer[i].X + fftBuffer[i].Y * fftBuffer[i].Y);
+        }
+        return spectrum;
+    }
+    public float[] GetBands()
+    {
+        float[] spectrum = GetSpectrum();
+        int bandsCount = 64;
+        float[] bands = new float[bandsCount];
+        int binsPerBand = spectrum.Length / bandsCount;
+        for (int i = 0; i < bandsCount; i++)
+        {
+            float sum = 0;
+            for (int j = 0; j < binsPerBand; j++)
+            {
+                sum += spectrum[i * binsPerBand + j];
+            }
+            float currentBandValue = sum / binsPerBand;
+            _smoothedBands[i] = 0.7f * _smoothedBands[i] + 0.3f * currentBandValue;
+            bands[i] = _smoothedBands[i];
+        }
+        return bands;
     }
 }

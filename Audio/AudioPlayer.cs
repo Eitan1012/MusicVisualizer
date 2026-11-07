@@ -24,6 +24,23 @@ namespace  MusicVisualizer.Audio
             return _analyzer.GetSamples();
         }
 
+        public float[] GetSpectrum()
+        {
+            if (_analyzer == null)
+            {
+                return Array.Empty<float>();
+            }
+            return _analyzer.GetSpectrum();
+        }
+        public float[] GetBands()
+        {
+            if (_analyzer == null)
+            {
+                return Array.Empty<float>();
+            }
+            return _analyzer.GetBands();
+        }
+
         public TimeSpan CurrentTime
         {
             get => _reader?.CurrentTime ?? TimeSpan.Zero;
