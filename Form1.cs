@@ -9,6 +9,7 @@ public partial class Form1 : Form
     private System.Windows.Forms.Timer _timer = new System.Windows.Forms.Timer();
     private TrackBar _progressBar = new TrackBar();
     private bool _isDragging = false;
+    private Label _audioLevelLabel = new Label();
     public Form1()
     {
         InitializeComponent();
@@ -46,6 +47,10 @@ public partial class Form1 : Form
         _progressBar.MouseDown += ProgressBar_MouseDown;
         _progressBar.MouseUp += ProgressBar_MouseUp;
         Controls.Add(_progressBar);
+        _audioLevelLabel.Text = "Audio Level: 0.000";
+        _audioLevelLabel.SetBounds(20, 260, 300, 30);
+        _audioLevelLabel.Font = new Font("Segoe UI", 14);
+        Controls.Add(_audioLevelLabel);
 
         _timer.Interval = 100;
         _timer.Tick += Timer_Tick;
@@ -107,6 +112,12 @@ public partial class Form1 : Form
             {
             _progressBar.Value = Math.Min(_progressBar.Maximum, (int)_player.CurrentTime.TotalSeconds * 10);
             }
+            float level = 0;
+            foreach (float sample in _player.GetSamples())
+            {
+                level = Math.Max(level, Math.Abs(sample));
+            }
+            _audioLevelLabel.Text = $"Audio Level: {level:F3}";
     }
     private void ProgressBar_Scroll(object sender, EventArgs e)
     {

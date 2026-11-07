@@ -9,10 +9,20 @@ namespace  MusicVisualizer.Audio
     {
         private WaveOutEvent? _output;
         private AudioFileReader? _reader;
+        private AudioAnalyzer? _analyzer;
 
         public bool IsLoaded => _reader != null;
 
         public TimeSpan Duration => _reader?.TotalTime ?? TimeSpan.Zero;
+
+        public float[] GetSamples()
+        {
+            if (_analyzer == null)
+            {
+               return Array.Empty<float>();  
+            }
+            return _analyzer.GetSamples();
+        }
 
         public TimeSpan CurrentTime
         {
@@ -42,8 +52,9 @@ namespace  MusicVisualizer.Audio
             try
             {
                 _reader = new AudioFileReader(filePath);
+                _analyzer = new AudioAnalyzer(_reader);
                 _output = new WaveOutEvent();
-                _output.Init(_reader);
+                _output.Init(_analyzer.ToWaveProvider());
 
             }
             catch
@@ -84,6 +95,7 @@ namespace  MusicVisualizer.Audio
         _reader?.Dispose();
         _output = null;
         _reader = null;
+        _analyzer = null;
     }
     public void Dispose()
     {
