@@ -1,4 +1,5 @@
 using MusicVisualizer.Audio;
+using MusicVisualizer.Visualization;
 
 namespace MusicVisualizer;
 
@@ -12,6 +13,7 @@ public partial class Form1 : Form
     private Label _audioLevelLabel = new Label();
     private Label _spectrumLabel = new Label();
     private Label _bandsLabel = new Label();
+    private CircleVisualizer _visualizer = new CircleVisualizer();
     public Form1()
     {
         InitializeComponent();
@@ -57,8 +59,10 @@ public partial class Form1 : Form
         _spectrumLabel.SetBounds(20, 300, 400, 30);
         Controls.Add(_spectrumLabel);
         _bandsLabel.Text = "Bands: 0 / 0 / 0";
-        _bandsLabel.SetBounds(20, 340, 500, 30);
+        _bandsLabel.SetBounds(20, 340, 390, 30);
         Controls.Add(_bandsLabel);
+        _visualizer.SetBounds(430, 50, 320, 320);
+        Controls.Add(_visualizer);
 
         _timer.Interval = 100;
         _timer.Tick += Timer_Tick;
@@ -145,13 +149,14 @@ public partial class Form1 : Form
         {
             treble += spectrum[i];
         }
-        treble /= 201;
+        treble /= (spectrum.Length - 100);
         _spectrumLabel.Text = $"Spectrum: Bass: {bass:F6} / Treble: {treble:F6}";
 
         float[] bands = _player.GetBands();
         if (bands.Length == 64)
         {
             _bandsLabel.Text = $"Bands: {bands[0]:F6} / {bands[8]:F6} / {bands[16]:F6} / {bands[24]:F6}";
+            _visualizer.SetBands(bands);
         }
     }
     private void ProgressBar_Scroll(object sender, EventArgs e)

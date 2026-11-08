@@ -74,20 +74,30 @@ public class AudioAnalyzer : ISampleProvider
     public float[] GetBands()
     {
         float[] spectrum = GetSpectrum();
+
         int bandsCount = 64;
         float[] bands = new float[bandsCount];
-        int binsPerBand = spectrum.Length / bandsCount;
+
         for (int i = 0; i < bandsCount; i++)
         {
+            double startRatio = (double)i / bandsCount;
+            double endRatio = (double)(i + 1) / bandsCount;
+
+            int start = (int)(Math.Pow(startRatio, 1.5) * spectrum.Length);
+            int end = (int)(Math.Pow(endRatio, 1.5) * spectrum.Length);
+
             float sum = 0;
-            for (int j = 0; j < binsPerBand; j++)
+            for (int j = start; j < end; j++)
             {
-                sum += spectrum[i * binsPerBand + j];
+                sum += spectrum[j];
             }
-            float currentBandValue = sum / binsPerBand;
-            _smoothedBands[i] = 0.7f * _smoothedBands[i] + 0.3f * currentBandValue;
+            float currentValue = sum / (end - start);
+            _smoothedBands[i] = 0.7f * _smoothedBands[i] + 0.3f * currentValue;
             bands[i] = _smoothedBands[i];
+
+        
         }
         return bands;
+
     }
 }
