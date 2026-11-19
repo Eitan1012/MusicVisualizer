@@ -64,7 +64,7 @@ public partial class Form1 : Form
         _visualizer.SetBounds(430, 50, 320, 320);
         Controls.Add(_visualizer);
 
-        _timer.Interval = 100;
+        _timer.Interval = 16;
         _timer.Tick += Timer_Tick;
         _timer.Start(); 
     }
@@ -156,7 +156,7 @@ public partial class Form1 : Form
         if (bands.Length == 64)
         {
             _bandsLabel.Text = $"Bands: {bands[0]:F6} / {bands[8]:F6} / {bands[16]:F6} / {bands[24]:F6}";
-            _visualizer.SetBands(bands);
+            _visualizer.SetBands(bands, bass); 
         }
     }
     private void ProgressBar_Scroll(object sender, EventArgs e)
