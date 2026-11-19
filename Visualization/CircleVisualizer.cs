@@ -16,6 +16,8 @@ public class CircleVisualizer : Control
     private float _lastBass = 0f;
     private float _bassAttack = 0f;
     private float _bassAverage = 0.003f;
+    private float _midFlow = 0f;
+    private float _midPhase = 0f;
         public CircleVisualizer()
     {
         Size = new Size(320, 320);
@@ -30,6 +32,15 @@ public class CircleVisualizer : Control
             return;
         }
         _bands = bands;
+        float midEnergy = 0f;
+        for (int j = 6; j < 20; j++)
+        {
+            midEnergy += bands[j];
+        }
+        midEnergy /= 14f;
+        float midTarget = Math.Clamp(MathF.Sqrt(Math.Max(0f, midEnergy)) * 30f, 0f, 1f);
+        _midFlow += (midTarget - _midFlow) * 0.15f;
+        _midPhase += _midFlow * 0.035f + 0.025f;
         float target = Math.Clamp(MathF.Sqrt(Math.Max(0f, bass)) * 5f, 0f, 1f);
         _bassPulse += (target - _bassPulse) * (target > _bassPulse ? 0.35f : 0.10f);
         float rise = Math.Max(0f, bass - _lastBass);
@@ -60,8 +71,8 @@ public class CircleVisualizer : Control
             highEnergy += _bands[j];
         }
         highEnergy /= 20f;
-        using Pen linePen = new Pen(Color.MediumPurple, 2f + Math.Clamp(MathF.Sqrt(Math.Max(0f, highEnergy)) * 10f, 0f, 1.5f));
-        
+        using Pen linePen = new Pen(Color.MediumPurple, 2f + Math.Clamp(MathF.Sqrt(Math.Max(0f, highEnergy)) * 80f, 0f, 1.5f));
+        g.DrawString($"High: {highEnergy:F6} | Width: {linePen.Width:F2}", Font, Brushes.White, 8, 24);
 
         g.DrawEllipse(circlePen, centerX - radius, centerY - radius, radius * 2, radius * 2);
 
@@ -76,6 +87,9 @@ public class CircleVisualizer : Control
         float strength = MathF.Sqrt(Math.Max(0f, _bands[bandIndex]));
         
         float lineLength = 20f + _bassPulse * 12f + Math.Min(35f, strength * 300f);
+
+        float wave = (1f + MathF.Sin(2f * (float)angle + _midPhase)) * 0.5f;
+        lineLength += _midFlow * 6f * wave;
  
 
             float x1 = centerX + (float)((radius + 5) * Math.Cos(angle));
