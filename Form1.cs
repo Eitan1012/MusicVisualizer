@@ -124,12 +124,18 @@ public partial class Form1 : Form
             {
             _progressBar.Value = Math.Min(_progressBar.Maximum, (int)_player.CurrentTime.TotalSeconds * 10);
             }
-            float level = 0;
-            foreach (float sample in _player.GetSamples())
+            float peak = 0f;
+            float[] samples = _player.GetSamples();
+            float sumSquares = 0f;
+
+            foreach (float sample in samples)
             {
-                level = Math.Max(level, Math.Abs(sample));
+                peak = Math.Max(peak, Math.Abs(sample));
+                sumSquares += sample * sample;
             }
-            _audioLevelLabel.Text = $"Audio Level: {level:F3}";
+            float rms = samples.Length == 0 ? 0f : MathF.Sqrt(sumSquares / samples.Length);
+            _audioLevelLabel.Text = $"Peak: {peak:F3} | RMS: {rms:F3}";
+
             float[] spectrum = _player.GetSpectrum();
             if (spectrum.Length == 0)
         {
@@ -156,7 +162,7 @@ public partial class Form1 : Form
         if (bands.Length == 64)
         {
             _bandsLabel.Text = $"Bands: {bands[0]:F6} / {bands[8]:F6} / {bands[16]:F6} / {bands[24]:F6}";
-            _visualizer.SetBands(bands, bass); 
+            _visualizer.SetBands(bands, bass, rms); 
         }
     }
     private void ProgressBar_Scroll(object sender, EventArgs e)

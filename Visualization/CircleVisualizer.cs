@@ -18,6 +18,10 @@ public class CircleVisualizer : Control
     private float _bassAverage = 0.003f;
     private float _midFlow = 0f;
     private float _midPhase = 0f;
+    private readonly float[] _smoothedLineResponse = new float[64];
+    private readonly float[] _lineSpring = new float[64];
+    private readonly float[] _lineSpringVelocity = new float[64];
+    private float _glowLevel = 0f;
         public CircleVisualizer()
     {
         Size = new Size(320, 320);
@@ -25,13 +29,25 @@ public class CircleVisualizer : Control
         DoubleBuffered = true;
     }
 
-    public void SetBands(float[] bands, float bass)
+    public void SetBands(float[] bands, float bass, float rms)
     {
         if (bands.Length != 64)
         {
             return;
         }
         _bands = bands;
+        float glowTarget = Math.Clamp((rms - 0.03f) * 3f, 0f, 1f);
+        _glowLevel += (glowTarget - _glowLevel) * 0.15f;
+        for (int i = 0; i < 64; i++)
+        {
+            float targetLength = Math.Min(35f, MathF.Sqrt(Math.Max(0f, bands[i])) * 300f);
+            float speed =targetLength > _smoothedLineResponse[i] ? 0.55f : 0.14f;
+            float previous = _smoothedLineResponse[i];
+            float change = targetLength - previous;
+            _lineSpringVelocity[i] = (_lineSpringVelocity[i] + change * 0.12f - _lineSpring[i] * 0.18f) * 0.65f;
+            _lineSpring[i] = Math.Clamp(_lineSpring[i] + _lineSpringVelocity[i], -2f, 2f);
+            _smoothedLineResponse[i] += (targetLength - _smoothedLineResponse[i]) * speed;
+        }
         float midEnergy = 0f;
         for (int j = 6; j < 20; j++)
         {
@@ -73,6 +89,7 @@ public class CircleVisualizer : Control
         highEnergy /= 20f;
         using Pen linePen = new Pen(Color.MediumPurple, 2f + Math.Clamp(MathF.Sqrt(Math.Max(0f, highEnergy)) * 80f, 0f, 1.5f));
         g.DrawString($"High: {highEnergy:F6} | Width: {linePen.Width:F2}", Font, Brushes.White, 8, 24);
+        using Pen glowPen = new Pen(Color.FromArgb((int)(_glowLevel * 95f), Color.Cyan), 10f);
 
         g.DrawEllipse(circlePen, centerX - radius, centerY - radius, radius * 2, radius * 2);
 
@@ -84,9 +101,9 @@ public class CircleVisualizer : Control
 
             int bandIndex = 4 + Math.Min(i, 64 - i) * 59 / 32;
             
-        float strength = MathF.Sqrt(Math.Max(0f, _bands[bandIndex]));
         
-        float lineLength = 20f + _bassPulse * 12f + Math.Min(35f, strength * 300f);
+        
+        float lineLength = 20f + _bassPulse * 12f + _smoothedLineResponse[bandIndex] + _lineSpring[bandIndex];
 
         float wave = (1f + MathF.Sin(2f * (float)angle + _midPhase)) * 0.5f;
         lineLength += _midFlow * 6f * wave;
