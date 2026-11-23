@@ -63,10 +63,48 @@ public partial class Form1 : Form
         Controls.Add(_bandsLabel);
         _visualizer.SetBounds(430, 50, 320, 320);
         Controls.Add(_visualizer);
-
+        BackColor = Color.FromArgb(12, 16, 30);
+        ClientSize = new Size(900, 640);
+        openButton.Visible = false;
+        playButton.Visible = false;
+        pauseButton.Visible = false;
+        stopButton.Visible = false;
+        _timeLabel.Visible = false;
+        _progressBar.Visible = false;
+        _audioLevelLabel.Visible = false;
+        _spectrumLabel.Visible = false;
+        _bandsLabel.Visible = false;
+       _visualizer.Size = new Size(480, 480);
+       _visualizer.Location = new Point((ClientSize.Width - _visualizer.Width) / 2, (ClientSize.Height - _visualizer.Height) / 2);
+       Resize += (_, __) =>
+       {
+           _visualizer.Location = new Point((ClientSize.Width - _visualizer.Width) / 2, (ClientSize.Height - _visualizer.Height) / 2);
+       };
         _timer.Interval = 16;
         _timer.Tick += Timer_Tick;
         _timer.Start(); 
+    }
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == (Keys.Control | Keys.O))
+        {
+            OpenButton_Click(this, EventArgs.Empty);
+            return true;
+        }
+        if (keyData == Keys.Space && _player.IsLoaded)
+        {
+            if (_player.playbackState == NAudio.Wave.PlaybackState.Playing)
+            {
+                _player.Pause();
+        
+            }
+            else
+            {
+                _player.Play();
+            }
+            return true;
+        }
+        return base.ProcessCmdKey(ref msg, keyData);
     }
         private void OpenButton_Click(object sender, EventArgs e)
     {

@@ -72,7 +72,13 @@ public class CircleVisualizer : Control
         base.OnPaint(e);
         
         Graphics g = e.Graphics;
-        g.DrawString($"Pulse: {_bassPulse:F2} | Attack: {_bassAttack:F2}", Font, Brushes.White, 8, 8);
+        using var backgroundPath = new GraphicsPath();
+        backgroundPath.AddEllipse(ClientRectangle);
+        using var ambientBrush = new PathGradientBrush(backgroundPath);
+        ambientBrush.CenterColor = Color.FromArgb(24, 30, 54);
+        g.FillPath(ambientBrush, backgroundPath);
+        ambientBrush.SurroundColors = new Color[] {BackColor};
+        g.FillEllipse(ambientBrush, ClientRectangle);
         g.SmoothingMode = SmoothingMode.AntiAlias;
 
         float centerX = Width / 2f;
@@ -88,10 +94,16 @@ public class CircleVisualizer : Control
         }
         highEnergy /= 20f;
         using Pen linePen = new Pen(Color.MediumPurple, 2f + Math.Clamp(MathF.Sqrt(Math.Max(0f, highEnergy)) * 80f, 0f, 1.5f));
-        g.DrawString($"High: {highEnergy:F6} | Width: {linePen.Width:F2}", Font, Brushes.White, 8, 24);
+        using Pen lineGlowPen = new Pen(Color.FromArgb(40, Color.MediumPurple), linePen.Width + 8f);
         using Pen glowPen = new Pen(Color.FromArgb((int)(_glowLevel * 95f), Color.Cyan), 10f);
+        using Pen outerGlowPen = new Pen(Color.FromArgb((int)(_glowLevel * 18f)), 28f);
+        using Pen middleGlowPen = new Pen(Color.FromArgb((int)(_glowLevel * 35f)), 16f);
+        g.DrawEllipse(outerGlowPen, centerX - radius, centerY - radius, radius * 2, radius * 2);
+        g.DrawEllipse(middleGlowPen, centerX - radius, centerY - radius, radius * 2, radius * 2);
+        g.DrawEllipse(glowPen, centerX - radius, centerY - radius, radius * 2, radius * 2);
 
         g.DrawEllipse(circlePen, centerX - radius, centerY - radius, radius * 2, radius * 2);
+
 
         
 
@@ -113,6 +125,7 @@ public class CircleVisualizer : Control
             float y1 = centerY + (float)((radius + 5) * Math.Sin(angle));
             float x2 = centerX + (float)((radius + 5 + lineLength) * Math.Cos(angle));
             float y2 = centerY + (float)((radius + 5 + lineLength) * Math.Sin(angle));
+            g.DrawLine(lineGlowPen, x1, y1, x2, y2);
             g.DrawLine(linePen, x1, y1, x2, y2);
         }
     }
