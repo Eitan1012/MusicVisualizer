@@ -5,20 +5,30 @@ namespace MusicVisualizer.Audio;
 
 public class AudioAnalyzer : ISampleProvider
 {
-    private ISampleProvider _source;
+    private ISampleProvider? _source;
     private float[] _sampels = new float[2048];
     private float[] _smoothedBands = new float[64];
     private int _index = 0;
     private readonly object _lock = new object();
 
-    public WaveFormat WaveFormat => _source.WaveFormat;
+    public WaveFormat WaveFormat { get; }
 
     public AudioAnalyzer(ISampleProvider source)
     {
         _source = source;
+        WaveFormat = source.WaveFormat;
     }
+    public AudioAnalyzer(WaveFormat format)
+    {
+        WaveFormat = format;
+    }
+    
     public int Read(float[] buffer, int offset, int count)
     {
+        if (_source is null)
+        {
+            throw new InvalidOperationException("Live audio uses FeedLiveSamples.");
+        }
         int read = _source.Read(buffer, offset, count);
         int channels = _source.WaveFormat.Channels;
         lock (_lock)
@@ -49,6 +59,29 @@ public class AudioAnalyzer : ISampleProvider
             }
         }
         return result;
+    }
+
+    public void FeedLiveSamples(byte[] buffer, int count, int channels)
+    {
+        int frameSize= channels * sizeof(float);
+
+        if (channels <= 0 || count < 0 || count > buffer.Length || count % frameSize != 0)
+        {
+            return;
+        }
+        lock (_lock)
+        {
+            for (int i = 0; i < count; i += frameSize)
+            {
+                float mono = 0f;
+                for (int c = 0; c < channels; c++)
+                {
+                    mono += BitConverter.ToSingle(buffer, i + c * 4);
+                }
+                _sampels[_index] = mono / channels;
+                _index = (_index + 1) % _sampels.Length;
+            }
+        }
     }
 
     public float[] GetSpectrum()

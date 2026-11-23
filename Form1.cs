@@ -14,7 +14,11 @@ public partial class Form1 : Form
     private Label _spectrumLabel = new Label();
     private Label _bandsLabel = new Label();
     private CircleVisualizer _visualizer = new CircleVisualizer();
-    public Form1()
+    private LiveAudioCapture? _liveCapture;
+    private AudioAnalyzer? _liveAnalyzer;
+    private long _liveBytes = 0;
+    private float _livePeak = 0f;
+        public Form1()
     {
         InitializeComponent();
         Text = "Music Visualizer";
@@ -80,6 +84,60 @@ public partial class Form1 : Form
        {
            _visualizer.Location = new Point((ClientSize.Width - _visualizer.Width) / 2, (ClientSize.Height - _visualizer.Height) / 2);
        };
+       Button mp3Tab = new Button()
+        {
+            Text = "MP3",
+            Location = new Point(18, 16),
+            Size = new Size(75, 30),
+            BackColor = Color.FromArgb(26, 48, 63),
+            ForeColor = Color.Cyan,
+            FlatStyle = FlatStyle.Flat
+        };
+        mp3Tab.FlatAppearance.BorderSize = 0;
+        mp3Tab.Click += (_, __) => OpenButton_Click(this, EventArgs.Empty);
+        Controls.Add(mp3Tab);
+
+        Button liveTab = new Button()
+        {
+            Text = "Live",
+            Location = new Point(99, 16),
+            Size = new Size(90, 30),
+            BackColor = Color.FromArgb(12, 16, 30),
+            ForeColor = Color.LightGray,
+            FlatStyle = FlatStyle.Flat,
+            Enabled = true
+        };
+        liveTab.FlatAppearance.BorderSize = 0;
+        liveTab.Click += (_, __) =>
+        {
+            if (_liveCapture != null)
+            {
+                return;
+            }
+            _player.Pause();
+            _liveCapture = new LiveAudioCapture();
+            _liveAnalyzer = new AudioAnalyzer(_liveCapture.WaveFormat);
+            int liveChannels = _liveCapture.WaveFormat.Channels;
+            _liveCapture.DataAvailable += (_, e) =>
+            {
+                System.Threading.Interlocked.Add(ref _liveBytes, e.BytesRecorded);
+                _liveAnalyzer?.FeedLiveSamples(e.Buffer, e.BytesRecorded, liveChannels);
+                float peak = 0f;
+                for (int i =0; i + 4 <= e.BytesRecorded; i += 4)
+                {
+                    float sample = BitConverter.ToSingle(e.Buffer, i);
+                    peak = Math.Max(peak, Math.Abs(sample));
+                }
+                System.Threading.Volatile.Write(ref _livePeak, peak);
+            };
+
+            _liveCapture.Start();
+        };
+
+Controls.Add(liveTab);
+
+
+       
         _timer.Interval = 16;
         _timer.Tick += Timer_Tick;
         _timer.Start(); 
@@ -115,6 +173,10 @@ public partial class Form1 : Form
             try
             {
                 _player.Load(openFileDialog.FileName);
+                _liveCapture?.Stop();
+                _liveCapture?.Dispose();
+                _liveCapture = null;
+                _liveAnalyzer = null;
                 _progressBar.Maximum = Math.Max(1, (int)(_player.Duration.TotalSeconds*10));
                 _progressBar.Value = 0;
                 _player.Play();
@@ -146,11 +208,38 @@ public partial class Form1 : Form
         _player.Dispose();
         _timer.Stop();
         _timer.Dispose();
+        _liveCapture?.Dispose();
         
         
     }
     private void Timer_Tick(object sender, EventArgs e)
     {
+
+        if (_liveCapture != null)
+        {
+            long bytes = System.Threading.Interlocked.Read(ref _liveBytes);
+            Text = $"Peak:{System.Threading.Volatile.Read(ref _livePeak):F3} Live: {bytes:N0} bytes";
+        }
+        if (_liveCapture != null && _liveAnalyzer != null)
+        {
+            float[] liveSamples = _liveAnalyzer.GetSamples();
+            float livesumSquares = 0f;
+           foreach (float sample in liveSamples)
+            {
+                livesumSquares += sample * sample;
+            }
+            float liveRms = MathF.Sqrt(livesumSquares / liveSamples.Length);
+            float[] liveSpectrum = _liveAnalyzer.GetSpectrum(); 
+            float liveBass = 0f;
+            for (int i = 2; i <= 12; i++)
+            {
+                liveBass += liveSpectrum[i];
+            }
+            liveBass /= 11;
+            float[] liveBands = _liveAnalyzer.GetBands();
+            _visualizer.SetBands(liveBands, liveBass, liveRms);
+            return;
+        }
         if (!_player.IsLoaded)
         {
             return;
