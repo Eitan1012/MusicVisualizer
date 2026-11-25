@@ -24,6 +24,8 @@ public partial class Form1 : Form
     private TrackInfo? _currentTrack;
     private Label _trackTitleLabel = new Label();
     private Label _trackArtistLabel = new Label();
+    private System.Windows.Forms.Timer _metadataTimer = new();
+    private bool _isReadingMetadata = false;
         public Form1()
     {
         InitializeComponent();
@@ -122,7 +124,7 @@ public partial class Form1 : Form
         liveTab.Cursor = Cursors.Hand;
         liveTab.FlatAppearance.MouseOverBackColor = Color.FromArgb(36, 65, 80);
         liveTab.FlatAppearance.MouseDownBackColor = Color.FromArgb(18, 92, 103);
-        liveTab.Click += (_, __) =>
+        liveTab.Click += async (_, __) =>
         {
             if (_liveCapture != null)
             {
@@ -150,6 +152,8 @@ public partial class Form1 : Form
             _currentTrack = null;
             _visualizer.setCoverArt(null);
             UpdateTrackLabels();
+
+            await RefreshLiveTrackAsync();
         };
 
     Controls.Add(liveTab);
@@ -175,6 +179,9 @@ public partial class Form1 : Form
         _timer.Interval = 16;
         _timer.Tick += Timer_Tick;
         _timer.Start(); 
+        _metadataTimer.Interval = 1000;
+        _metadataTimer.Tick += async (_, __) => await RefreshLiveTrackAsync();
+        _metadataTimer.Start();
     }
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
@@ -384,5 +391,36 @@ public partial class Form1 : Form
         _trackTitleLabel.Text = _currentTrack?.Title ?? "";
         _trackArtistLabel.Text = _currentTrack?.Artist ?? "";
     }
-}
+
+
+    private async Task RefreshLiveTrackAsync()
+    {
+        if (_liveCapture == null || _isReadingMetadata)
+        {
+            return;
+        }
+        var capture = _liveCapture;
+        _isReadingMetadata = true;
+        try
+        {
+            var track = await WindowsMediaReader.ReadAsync();
+            if (capture != _liveCapture)
+            {
+                return;
+            }
+            _currentTrack = track;
+            UpdateTrackLabels();
+            _visualizer.setCoverArt(_currentTrack?.CoverArt);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error reading live metadata: {ex.Message}");
+        }
+        finally
+        {
+            _isReadingMetadata = false;
+        }
+        }
+    }  
+
 
