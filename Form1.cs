@@ -1,5 +1,6 @@
 using MusicVisualizer.Audio;
 using MusicVisualizer.Visualization;
+using MusicVisualizer.Metadata;
 
 namespace MusicVisualizer;
 
@@ -20,6 +21,7 @@ public partial class Form1 : Form
     private AudioAnalyzer? _liveAnalyzer;
     private long _liveBytes = 0;
     private float _livePeak = 0f;
+    private TrackInfo? _currentTrack;
         public Form1()
     {
         InitializeComponent();
@@ -142,6 +144,8 @@ public partial class Form1 : Form
 
             _liveCapture.Start();
             UpdateTabColors(true);
+            _currentTrack = null;
+            _visualizer.setCoverArt(null);
         };
 
     Controls.Add(liveTab);
@@ -193,6 +197,17 @@ public partial class Form1 : Form
                 _progressBar.Value = 0;
                 _player.Play();
                 UpdateTabColors(false);
+                try
+                {
+                    _currentTrack = Mp3MetadataReader.Read(openFileDialog.FileName);
+                    _visualizer.setCoverArt(_currentTrack.CoverArt);
+                }
+                catch (Exception ex)
+                {
+                    _currentTrack = null;
+                    _visualizer.setCoverArt(null);
+                    MessageBox.Show($"Error reading metadata: {ex.Message}");
+                }
             }
             catch (Exception ex)
             {
@@ -325,7 +340,7 @@ public partial class Form1 : Form
     }
     private void UpdateTabColors(bool isLive)
     {
-        if (_mp3Tab != null || _liveTab != null)
+        if (_mp3Tab != null && _liveTab != null)
         {
             Color active = Color.FromArgb(26, 48, 63);
             Color inactive = Color.FromArgb(12, 16, 30);

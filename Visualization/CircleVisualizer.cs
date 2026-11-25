@@ -24,6 +24,7 @@ public class CircleVisualizer : Control
     private float _glowLevel = 0f;
     private float _discAngle = 0f;
     private float _discSpinSpeed = 0f;
+    private Image? _coverArt;
         public CircleVisualizer()
     {
         Size = new Size(320, 320);
@@ -137,6 +138,21 @@ public class CircleVisualizer : Control
         using var discBrush = new LinearGradientBrush(new RectangleF(centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2), Color.FromArgb(35, 46, 68), Color.FromArgb(93, 98, 128), 45f + _discAngle);
         using var discRim = new Pen(Color.FromArgb(150, 180, 195, 230), 2f);
         g.FillEllipse(discBrush, centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2);
+        if (_coverArt != null)
+        {
+            var state = g.Save();
+            using var coverPath = new GraphicsPath();
+            coverPath.AddEllipse(centerX - discRadius, centerX - discRadius, discRadius * 2, discRadius * 2);
+            g.SetClip(coverPath, CombineMode.Intersect);
+            g.TranslateTransform(centerX, centerY);
+            g.RotateTransform(_discAngle);
+            g.TranslateTransform(-centerX, -centerY);
+            float scale = Math.Max(discRadius * 2 / _coverArt.Width, discRadius * 2 / _coverArt.Height);
+            float imageWidth = _coverArt.Width * scale;
+            float imageHeight = _coverArt.Height * scale;
+            g.DrawImage(_coverArt, centerX - imageWidth / 2f, centerY - imageHeight / 2f, imageWidth, imageHeight);
+            g.Restore(state);
+        }
         using var reflectionBrush = new SolidBrush(Color.FromArgb(20, 210, 225, 255)); 
         g.FillPie(reflectionBrush, centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2, 30f + _discAngle, 35f);
         g.FillPie(reflectionBrush, centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2, 210f + _discAngle, 35f);
@@ -147,6 +163,27 @@ public class CircleVisualizer : Control
         g.DrawEllipse(hubRim, centerX - 23f, centerY - 23f, 46f, 46f);
 
 
+    }
+    public void setCoverArt(byte[]? coverData)
+    {
+        _coverArt?.Dispose();
+        _coverArt = null;
+        if (coverData != null && coverData.Length > 0)
+        {
+            using var stream = new System.IO.MemoryStream(coverData);
+            using var image = Image.FromStream(stream);
+            _coverArt = new Bitmap(image);
+        }
+        Invalidate();
+    }
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _coverArt?.Dispose();
+            _coverArt = null;
+        }
+        base.Dispose(disposing);
     }
 
 }
