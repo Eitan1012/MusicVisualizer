@@ -26,6 +26,10 @@ public partial class Form1 : Form
     private Label _trackArtistLabel = new Label();
     private System.Windows.Forms.Timer _metadataTimer = new();
     private bool _isReadingMetadata = false;
+    private bool _isFullscreen = false;
+    private Rectangle _previousBounds;
+    private FormWindowState _previousWindowState;
+    private FormBorderStyle _previousBorderStyle;
         public Form1()
     {
         InitializeComponent();
@@ -91,7 +95,7 @@ public partial class Form1 : Form
        Resize += (_, __) =>
        {
            _visualizer.Location = new Point((ClientSize.Width - _visualizer.Width) / 2, (ClientSize.Height - _visualizer.Height) / 2);
-              PositionTrackLabels();
+         PositionTrackLabels();
        };
        Button mp3Tab = new Button()
         {
@@ -192,6 +196,16 @@ public partial class Form1 : Form
     }
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
+        if (keyData == Keys.F11)
+        {
+            ToggleFullscreen();
+            return true;
+        }
+        if (keyData == Keys.Escape && _isFullscreen)
+        {
+            ToggleFullscreen();
+            return true;
+        }
         if (keyData == (Keys.Control | Keys.O))
         {
             OpenButton_Click(this, EventArgs.Empty);
@@ -428,6 +442,28 @@ public partial class Form1 : Form
             _isReadingMetadata = false;
         }
         }
-    }  
+        private void ToggleFullscreen()
+    {
+        if (!_isFullscreen)
+        {
+            _previousWindowState = WindowState;
+            _previousBounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+            Rectangle screenBounds = Screen.FromControl(this).Bounds;
+            _previousBorderStyle = FormBorderStyle;
+            WindowState = FormWindowState.Normal;
+            FormBorderStyle = FormBorderStyle.None;
+            Bounds = screenBounds;
+            _isFullscreen = true;
+        }
+        else
+        {
+          FormBorderStyle = _previousBorderStyle;
+          Bounds = _previousBounds;
+          WindowState = _previousWindowState;  
+          _isFullscreen = false;
+        }
+        }
+    }
+    
 
 
