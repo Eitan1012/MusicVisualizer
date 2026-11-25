@@ -22,6 +22,8 @@ public partial class Form1 : Form
     private long _liveBytes = 0;
     private float _livePeak = 0f;
     private TrackInfo? _currentTrack;
+    private Label _trackTitleLabel = new Label();
+    private Label _trackArtistLabel = new Label();
         public Form1()
     {
         InitializeComponent();
@@ -87,6 +89,7 @@ public partial class Form1 : Form
        Resize += (_, __) =>
        {
            _visualizer.Location = new Point((ClientSize.Width - _visualizer.Width) / 2, (ClientSize.Height - _visualizer.Height) / 2);
+              PositionTrackLabels();
        };
        Button mp3Tab = new Button()
         {
@@ -146,10 +149,25 @@ public partial class Form1 : Form
             UpdateTabColors(true);
             _currentTrack = null;
             _visualizer.setCoverArt(null);
+            UpdateTrackLabels();
         };
 
     Controls.Add(liveTab);
     _liveTab = liveTab;
+    _trackTitleLabel.Font = new Font("Segoe UI", 18f, FontStyle.Bold);
+    _trackTitleLabel.ForeColor = Color.White;
+    _trackTitleLabel.TextAlign = ContentAlignment.MiddleCenter;
+    _trackTitleLabel.AutoEllipsis = true;
+    _trackTitleLabel.Text = "";
+    Controls.Add(_trackTitleLabel);
+    _trackArtistLabel.Font = new Font("Segoe UI", 11f);
+    _trackArtistLabel.ForeColor = Color.FromArgb(145, 160, 190);
+    _trackArtistLabel.TextAlign = ContentAlignment.MiddleCenter;
+    _trackArtistLabel.AutoEllipsis = true;
+    _trackArtistLabel.Text = "";
+    Controls.Add(_trackArtistLabel);
+    PositionTrackLabels();
+
 
 
 
@@ -201,11 +219,13 @@ public partial class Form1 : Form
                 {
                     _currentTrack = Mp3MetadataReader.Read(openFileDialog.FileName);
                     _visualizer.setCoverArt(_currentTrack.CoverArt);
+                    UpdateTrackLabels();
                 }
                 catch (Exception ex)
                 {
                     _currentTrack = null;
                     _visualizer.setCoverArt(null);
+                    UpdateTrackLabels();
                     MessageBox.Show($"Error reading metadata: {ex.Message}");
                 }
             }
@@ -349,6 +369,20 @@ public partial class Form1 : Form
             _liveTab.BackColor = isLive ? active : inactive;
             _liveTab.ForeColor = isLive ? Color.Cyan : Color.LightGray;
         }
+    }
+
+    private void PositionTrackLabels()
+    {
+        _trackTitleLabel.SetBounds(_visualizer.Left, _visualizer.Bottom - 10, _visualizer.Width, 35);
+        _trackArtistLabel.SetBounds(_visualizer.Left, _visualizer.Bottom + 25, _visualizer.Width, 25);
+        _trackTitleLabel.BringToFront();
+        _trackArtistLabel.BringToFront();
+    }
+
+    private void UpdateTrackLabels()
+    {
+        _trackTitleLabel.Text = _currentTrack?.Title ?? "";
+        _trackArtistLabel.Text = _currentTrack?.Artist ?? "";
     }
 }
 
