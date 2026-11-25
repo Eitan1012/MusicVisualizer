@@ -109,6 +109,7 @@ public partial class Form1 : Form
         mp3Tab.Click += (_, __) => OpenButton_Click(this, EventArgs.Empty);
         Controls.Add(mp3Tab);
         _mp3Tab = mp3Tab;
+        _mp3Tab.Visible = false;
 
         Button liveTab = new Button()
         {
@@ -124,7 +125,7 @@ public partial class Form1 : Form
         liveTab.Cursor = Cursors.Hand;
         liveTab.FlatAppearance.MouseOverBackColor = Color.FromArgb(36, 65, 80);
         liveTab.FlatAppearance.MouseDownBackColor = Color.FromArgb(18, 92, 103);
-        liveTab.Click += async (_, __) =>
+        async Task StartLiveAsync() 
         {
             if (_liveCapture != null)
             {
@@ -154,10 +155,12 @@ public partial class Form1 : Form
             UpdateTrackLabels();
 
             await RefreshLiveTrackAsync();
-        };
+        }
+        liveTab.Click += async (_, __) => await StartLiveAsync();
 
     Controls.Add(liveTab);
     _liveTab = liveTab;
+    _liveTab.Visible = false;
     _trackTitleLabel.Font = new Font("Segoe UI", 18f, FontStyle.Bold);
     _trackTitleLabel.ForeColor = Color.White;
     _trackTitleLabel.TextAlign = ContentAlignment.MiddleCenter;
@@ -182,6 +185,10 @@ public partial class Form1 : Form
         _metadataTimer.Interval = 1000;
         _metadataTimer.Tick += async (_, __) => await RefreshLiveTrackAsync();
         _metadataTimer.Start();
+        Shown += async (_, __) =>
+        {
+            await StartLiveAsync();
+        };
     }
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
