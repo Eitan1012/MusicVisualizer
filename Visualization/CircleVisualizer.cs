@@ -22,6 +22,8 @@ public class CircleVisualizer : Control
     private readonly float[] _lineSpring = new float[64];
     private readonly float[] _lineSpringVelocity = new float[64];
     private float _glowLevel = 0f;
+    private float _discAngle = 0f;
+    private float _discSpinSpeed = 0f;
         public CircleVisualizer()
     {
         Size = new Size(320, 320);
@@ -64,6 +66,10 @@ public class CircleVisualizer : Control
         _bassAttack = Math.Max(_bassAttack * 0.80f, Math.Clamp(relativeRise * 0.65f, 0f, 1f));
         _bassAverage += (bass - _bassAverage) * 0.025f;
         _lastBass = bass;
+        float spinTarget = rms > 0.01f ? 0.8f : 0f;
+        float spinLerp = spinTarget > _discSpinSpeed ? 0.08f : 0.03f;
+        _discSpinSpeed += (spinTarget - _discSpinSpeed) * spinLerp;
+        _discAngle = (_discAngle + _discSpinSpeed) % 360f;
         Invalidate();
     }
 
@@ -75,8 +81,7 @@ public class CircleVisualizer : Control
         using var backgroundPath = new GraphicsPath();
         backgroundPath.AddEllipse(ClientRectangle);
         using var ambientBrush = new PathGradientBrush(backgroundPath);
-        ambientBrush.CenterColor = Color.FromArgb(24, 30, 54);
-        g.FillPath(ambientBrush, backgroundPath);
+        ambientBrush.CenterColor = Color.FromArgb(30, 36, 66);
         ambientBrush.SurroundColors = new Color[] {BackColor};
         g.FillEllipse(ambientBrush, ClientRectangle);
         g.SmoothingMode = SmoothingMode.AntiAlias;
@@ -128,6 +133,20 @@ public class CircleVisualizer : Control
             g.DrawLine(lineGlowPen, x1, y1, x2, y2);
             g.DrawLine(linePen, x1, y1, x2, y2);
         }
+        float discRadius =Math.Min(Width, Height) / 2f - 116f;
+        using var discBrush = new LinearGradientBrush(new RectangleF(centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2), Color.FromArgb(35, 46, 68), Color.FromArgb(93, 98, 128), 45f + _discAngle);
+        using var discRim = new Pen(Color.FromArgb(150, 180, 195, 230), 2f);
+        g.FillEllipse(discBrush, centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2);
+        using var reflectionBrush = new SolidBrush(Color.FromArgb(20, 210, 225, 255)); 
+        g.FillPie(reflectionBrush, centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2, 30f + _discAngle, 35f);
+        g.FillPie(reflectionBrush, centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2, 210f + _discAngle, 35f);
+        g.DrawEllipse(discRim, centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2);
+        using var hubBrush = new SolidBrush(Color.FromArgb(12, 16, 30));
+        g.FillEllipse(hubBrush, centerX - 18.75f, centerY - 18.75f, 37.5f, 37.5f);
+        using var hubRim = new Pen(Color.FromArgb(150, 195, 210, 235), 2f);
+        g.DrawEllipse(hubRim, centerX - 23f, centerY - 23f, 46f, 46f);
+
+
     }
 
 }

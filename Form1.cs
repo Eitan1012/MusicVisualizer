@@ -15,6 +15,8 @@ public partial class Form1 : Form
     private Label _bandsLabel = new Label();
     private CircleVisualizer _visualizer = new CircleVisualizer();
     private LiveAudioCapture? _liveCapture;
+    private Button? _mp3Tab;
+    private Button? _liveTab;
     private AudioAnalyzer? _liveAnalyzer;
     private long _liveBytes = 0;
     private float _livePeak = 0f;
@@ -94,8 +96,12 @@ public partial class Form1 : Form
             FlatStyle = FlatStyle.Flat
         };
         mp3Tab.FlatAppearance.BorderSize = 0;
+        mp3Tab.Cursor = Cursors.Hand;
+        mp3Tab.FlatAppearance.MouseOverBackColor = Color.FromArgb(36, 65, 80);
+        mp3Tab.FlatAppearance.MouseDownBackColor = Color.FromArgb(18, 92, 103);
         mp3Tab.Click += (_, __) => OpenButton_Click(this, EventArgs.Empty);
         Controls.Add(mp3Tab);
+        _mp3Tab = mp3Tab;
 
         Button liveTab = new Button()
         {
@@ -108,6 +114,9 @@ public partial class Form1 : Form
             Enabled = true
         };
         liveTab.FlatAppearance.BorderSize = 0;
+        liveTab.Cursor = Cursors.Hand;
+        liveTab.FlatAppearance.MouseOverBackColor = Color.FromArgb(36, 65, 80);
+        liveTab.FlatAppearance.MouseDownBackColor = Color.FromArgb(18, 92, 103);
         liveTab.Click += (_, __) =>
         {
             if (_liveCapture != null)
@@ -132,9 +141,12 @@ public partial class Form1 : Form
             };
 
             _liveCapture.Start();
+            UpdateTabColors(true);
         };
 
-Controls.Add(liveTab);
+    Controls.Add(liveTab);
+    _liveTab = liveTab;
+
 
 
        
@@ -180,6 +192,7 @@ Controls.Add(liveTab);
                 _progressBar.Maximum = Math.Max(1, (int)(_player.Duration.TotalSeconds*10));
                 _progressBar.Value = 0;
                 _player.Play();
+                UpdateTabColors(false);
             }
             catch (Exception ex)
             {
@@ -215,11 +228,7 @@ Controls.Add(liveTab);
     private void Timer_Tick(object sender, EventArgs e)
     {
 
-        if (_liveCapture != null)
-        {
-            long bytes = System.Threading.Interlocked.Read(ref _liveBytes);
-            Text = $"Peak:{System.Threading.Volatile.Read(ref _livePeak):F3} Live: {bytes:N0} bytes";
-        }
+   
         if (_liveCapture != null && _liveAnalyzer != null)
         {
             float[] liveSamples = _liveAnalyzer.GetSamples();
@@ -312,6 +321,18 @@ Controls.Add(liveTab);
         if (_player.IsLoaded)
         {
             _player.CurrentTime = TimeSpan.FromSeconds(_progressBar.Value / 10.0);
+        }
+    }
+    private void UpdateTabColors(bool isLive)
+    {
+        if (_mp3Tab != null || _liveTab != null)
+        {
+            Color active = Color.FromArgb(26, 48, 63);
+            Color inactive = Color.FromArgb(12, 16, 30);
+            _mp3Tab.BackColor = isLive ? inactive : active;
+            _mp3Tab.ForeColor = isLive ? Color.LightGray : Color.Cyan;
+            _liveTab.BackColor = isLive ? active : inactive;
+            _liveTab.ForeColor = isLive ? Color.Cyan : Color.LightGray;
         }
     }
 }
