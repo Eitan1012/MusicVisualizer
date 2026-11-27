@@ -206,11 +206,7 @@ public partial class Form1 : Form
             ToggleFullscreen();
             return true;
         }
-        if (keyData == (Keys.Control | Keys.O))
-        {
-            OpenButton_Click(this, EventArgs.Empty);
-            return true;
-        }
+
         if (keyData == Keys.Space && _player.IsLoaded)
         {
             if (_player.playbackState == NAudio.Wave.PlaybackState.Playing)

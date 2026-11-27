@@ -25,6 +25,9 @@ public class CircleVisualizer : Control
     private float _discAngle = 0f;
     private float _discSpinSpeed = 0f;
     private Image? _coverArt;
+    private Color _neonColor = Color.Cyan;
+    private Color _lineColor = Color.MediumPurple;
+    private Color _ambientColor = Color.FromArgb(30, 36, 66);
         public CircleVisualizer()
     {
         Size = new Size(320, 320);
@@ -82,7 +85,7 @@ public class CircleVisualizer : Control
         using var backgroundPath = new GraphicsPath();
         backgroundPath.AddEllipse(ClientRectangle);
         using var ambientBrush = new PathGradientBrush(backgroundPath);
-        ambientBrush.CenterColor = Color.FromArgb(30, 36, 66);
+        ambientBrush.CenterColor = _ambientColor;
         ambientBrush.SurroundColors = new Color[] {BackColor};
         g.FillEllipse(ambientBrush, ClientRectangle);
         g.SmoothingMode = SmoothingMode.AntiAlias;
@@ -90,7 +93,7 @@ public class CircleVisualizer : Control
         float centerX = Width / 2f;
         float centerY = Height / 2f;
         float radius = Math.Min(Width, Height) / 2f - 110f + _bassPulse * 16f + _bassAttack * 8f;
-        using Pen circlePen = new Pen(Color.Cyan, 3);
+        using Pen circlePen = new Pen(_neonColor, 3);
 
         
         float highEnergy = 0f;
@@ -99,9 +102,9 @@ public class CircleVisualizer : Control
             highEnergy += _bands[j];
         }
         highEnergy /= 20f;
-        using Pen linePen = new Pen(Color.MediumPurple, 2f + Math.Clamp(MathF.Sqrt(Math.Max(0f, highEnergy)) * 80f, 0f, 1.5f));
-        using Pen lineGlowPen = new Pen(Color.FromArgb(40, Color.MediumPurple), linePen.Width + 8f);
-        using Pen glowPen = new Pen(Color.FromArgb((int)(_glowLevel * 95f), Color.Cyan), 10f);
+        using Pen linePen = new Pen(_lineColor, 2f + Math.Clamp(MathF.Sqrt(Math.Max(0f, highEnergy)) * 80f, 0f, 1.5f));
+        using Pen lineGlowPen = new Pen(Color.FromArgb(40, _lineColor), linePen.Width + 8f);
+        using Pen glowPen = new Pen(Color.FromArgb((int)(_glowLevel * 95f), _neonColor), 10f);
         using Pen outerGlowPen = new Pen(Color.FromArgb((int)(_glowLevel * 18f)), 28f);
         using Pen middleGlowPen = new Pen(Color.FromArgb((int)(_glowLevel * 35f)), 16f);
         g.DrawEllipse(outerGlowPen, centerX - radius, centerY - radius, radius * 2, radius * 2);
@@ -168,11 +171,18 @@ public class CircleVisualizer : Control
     {
         _coverArt?.Dispose();
         _coverArt = null;
+        _neonColor = Color.Cyan;
+        _lineColor = Color.MediumPurple;
+        _ambientColor = Color.FromArgb(30, 36, 66);
         if (coverData != null && coverData.Length > 0)
         {
             using var stream = new System.IO.MemoryStream(coverData);
             using var image = Image.FromStream(stream);
             _coverArt = new Bitmap(image);
+            Color dominantColor = AlbumColorExtractor.GetDominantColor(_coverArt);
+            _neonColor = AlbumColorExtractor.MakeNeonColor(dominantColor);
+            _lineColor = AlbumColorExtractor.GetSeconderyColor(dominantColor);
+            _ambientColor = AlbumColorExtractor.GetAmbientColor(dominantColor);
         }
         Invalidate();
     }
