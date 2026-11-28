@@ -45,9 +45,9 @@ Available for Windows 10 and 11.
 
 ## Screenshots
 
-![MusicVisualizer Screenshot 1](screenshots/screenshot1.png)
+![MusicVisualizer Screenshot 1](screenshots/Screenshot1.png)
 
-![MusicVisualizer Screenshot 2](screenshots/screenshot2.png)
+![MusicVisualizer Screenshot 2](screenshots/Screenshot2.png)
 
 ## Building from Source
 
