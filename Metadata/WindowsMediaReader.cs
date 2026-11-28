@@ -2,6 +2,7 @@ using Windows.Media.Control;
 using Windows.Storage.Streams;
 namespace MusicVisualizer.Metadata;
 
+// Reads the current track information from the Windows Media session
 public static class WindowsMediaReader
 {
     public static async Task<TrackInfo?> ReadAsync()
@@ -19,7 +20,7 @@ public static class WindowsMediaReader
             Artist = properties.Artist,
             Album = properties.AlbumTitle
         };
-
+// Read cover art as a byte array
         if (properties.Thumbnail != null)
         {
             using var stream = await properties.Thumbnail.OpenReadAsync();

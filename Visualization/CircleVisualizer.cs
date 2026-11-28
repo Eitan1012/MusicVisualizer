@@ -8,7 +8,7 @@ using System.Windows.Forms;
 namespace MusicVisualizer.Visualization;
 
 
-
+// Renders a circular audio visualizer with a spinning disc
 public class CircleVisualizer : Control
 {
     private float[] _bands = new float[64];
@@ -35,6 +35,7 @@ public class CircleVisualizer : Control
         DoubleBuffered = true;
     }
 
+// Updates the visualizer with new audio 
     public void SetBands(float[] bands, float bass, float rms)
     {
         if (bands.Length != 64)
@@ -42,8 +43,11 @@ public class CircleVisualizer : Control
             return;
         }
         _bands = bands;
+
+        // Update glow level based on audio volume
         float glowTarget = Math.Clamp((rms - 0.03f) * 3f, 0f, 1f);
         _glowLevel += (glowTarget - _glowLevel) * 0.15f;
+        // Smooth frequency response
         for (int i = 0; i < 64; i++)
         {
             float targetLength = Math.Min(35f, MathF.Sqrt(Math.Max(0f, bands[i])) * 300f);
@@ -54,6 +58,7 @@ public class CircleVisualizer : Control
             _lineSpring[i] = Math.Clamp(_lineSpring[i] + _lineSpringVelocity[i], -2f, 2f);
             _smoothedLineResponse[i] += (targetLength - _smoothedLineResponse[i]) * speed;
         }
+        // Calculate mid-range energy
         float midEnergy = 0f;
         for (int j = 6; j < 20; j++)
         {
@@ -63,25 +68,32 @@ public class CircleVisualizer : Control
         float midTarget = Math.Clamp(MathF.Sqrt(Math.Max(0f, midEnergy)) * 30f, 0f, 1f);
         _midFlow += (midTarget - _midFlow) * 0.15f;
         _midPhase += _midFlow * 0.035f + 0.025f;
+
+        // Smooth bass response
         float target = Math.Clamp(MathF.Sqrt(Math.Max(0f, bass)) * 5f, 0f, 1f);
         _bassPulse += (target - _bassPulse) * (target > _bassPulse ? 0.35f : 0.10f);
+
+        // Detect sudden bass peaks
         float rise = Math.Max(0f, bass - _lastBass);
         float relativeRise = bass > 0.002f ? rise / Math.Max(0.003f, _bassAverage) : 0f;
         _bassAttack = Math.Max(_bassAttack * 0.80f, Math.Clamp(relativeRise * 0.65f, 0f, 1f));
         _bassAverage += (bass - _bassAverage) * 0.025f;
         _lastBass = bass;
+
+        // Accelerate and decelerate the spinning disc
         float spinTarget = rms > 0.01f ? 0.8f : 0f;
         float spinLerp = spinTarget > _discSpinSpeed ? 0.08f : 0.03f;
         _discSpinSpeed += (spinTarget - _discSpinSpeed) * spinLerp;
         _discAngle = (_discAngle + _discSpinSpeed) % 360f;
         Invalidate();
     }
-
+    // Draws the visualizer using GDI+
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);
         
         Graphics g = e.Graphics;
+        // Draw ambient background
         using var backgroundPath = new GraphicsPath();
         backgroundPath.AddEllipse(ClientRectangle);
         using var ambientBrush = new PathGradientBrush(backgroundPath);
@@ -92,6 +104,8 @@ public class CircleVisualizer : Control
 
         float centerX = Width / 2f;
         float centerY = Height / 2f;
+
+        // Expand the ring based on the bass
         float radius = Math.Min(Width, Height) / 2f - 110f + _bassPulse * 16f + _bassAttack * 8f;
         using Pen circlePen = new Pen(_neonColor, 3);
 
@@ -115,11 +129,12 @@ public class CircleVisualizer : Control
 
 
         
-
+        // Draw frequency lines around the circle
         for (int i = 0; i < 64; i++)
         {
             double angle = 2 * Math.PI * i / 64;
 
+            // Mirorr frequency bands
             int bandIndex = 4 + Math.Min(i, 64 - i) * 59 / 32;
             
         
@@ -141,6 +156,8 @@ public class CircleVisualizer : Control
         using var discBrush = new LinearGradientBrush(new RectangleF(centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2), Color.FromArgb(35, 46, 68), Color.FromArgb(93, 98, 128), 45f + _discAngle);
         using var discRim = new Pen(Color.FromArgb(150, 180, 195, 230), 2f);
         g.FillEllipse(discBrush, centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2);
+
+        // Show and rotate the album cover art
         if (_coverArt != null)
         {
             var state = g.Save();
@@ -156,6 +173,7 @@ public class CircleVisualizer : Control
             g.DrawImage(_coverArt, centerX - imageWidth / 2f, centerY - imageHeight / 2f, imageWidth, imageHeight);
             g.Restore(state);
         }
+        // Draw reflections on the disc
         using var reflectionBrush = new SolidBrush(Color.FromArgb(20, 210, 225, 255)); 
         g.FillPie(reflectionBrush, centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2, 30f + _discAngle, 35f);
         g.FillPie(reflectionBrush, centerX - discRadius, centerY - discRadius, discRadius * 2, discRadius * 2, 210f + _discAngle, 35f);
@@ -167,6 +185,7 @@ public class CircleVisualizer : Control
 
 
     }
+    // Sets the album cover art and extracts colors for the visualizer
     public void setCoverArt(byte[]? coverData)
     {
         _coverArt?.Dispose();
@@ -179,6 +198,7 @@ public class CircleVisualizer : Control
             using var stream = new System.IO.MemoryStream(coverData);
             using var image = Image.FromStream(stream);
             _coverArt = new Bitmap(image);
+            //Gnerate the visualizer colors
             Color dominantColor = AlbumColorExtractor.GetDominantColor(_coverArt);
             _neonColor = AlbumColorExtractor.MakeNeonColor(dominantColor);
             _lineColor = AlbumColorExtractor.GetSeconderyColor(dominantColor);

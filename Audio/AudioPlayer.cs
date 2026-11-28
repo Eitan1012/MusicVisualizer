@@ -5,6 +5,7 @@ using NAudio.Wave;
 
 namespace  MusicVisualizer.Audio
 {
+    // Handels Local audio playback
     public sealed class AudioPlayer : IDisposable
     {
         private WaveOutEvent? _output;
@@ -12,7 +13,7 @@ namespace  MusicVisualizer.Audio
         private AudioAnalyzer? _analyzer;
 
         public bool IsLoaded => _reader != null;
-
+    // Gets or changes the current playback position
         public TimeSpan Duration => _reader?.TotalTime ?? TimeSpan.Zero;
 
         public float[] GetSamples()
@@ -58,7 +59,7 @@ namespace  MusicVisualizer.Audio
 
         }
         public PlaybackState playbackState => _output?.PlaybackState ?? NAudio.Wave.PlaybackState.Stopped;
-
+    // Loads an audio file
         public void Load(string filePath)
         {
             if (!File.Exists(filePath))
@@ -69,6 +70,8 @@ namespace  MusicVisualizer.Audio
             try
             {
                 _reader = new AudioFileReader(filePath);
+
+                // Connect the audio playback to the audio analyzer
                 _analyzer = new AudioAnalyzer(_reader);
                 _output = new WaveOutEvent();
                 _output.Init(_analyzer.ToWaveProvider());

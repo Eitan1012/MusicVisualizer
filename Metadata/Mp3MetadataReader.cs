@@ -1,5 +1,6 @@
 namespace MusicVisualizer.Metadata;
 
+// Reads metadata from MP3 files
 public static class Mp3MetadataReader
 {
     public static TrackInfo Read(string filePath)

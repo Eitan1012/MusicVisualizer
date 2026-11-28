@@ -2,6 +2,7 @@ using System.Drawing;
 
 namespace MusicVisualizer.Visualization;
 
+// Extracts dominant colors from album cover art
 public static class AlbumColorExtractor
 {
  public static Color GetDominantColor(Image image)
@@ -16,6 +17,7 @@ public static class AlbumColorExtractor
             for (int x = 0; x < sample.Height; x++)
             {
                 Color pixel = sample.GetPixel(x, y);
+                // Ignore pixels that are too dark or too desaturated
                 if (pixel.GetSaturation() < 0.25f || pixel.GetBrightness() < 0.15f)
                 {
                     continue;
@@ -28,7 +30,7 @@ public static class AlbumColorExtractor
                 blueSums[hueIndex] += pixel.B;
             }
         }
-
+        // Find the most common hue
         int dominantIndex = 0;
         for (int i = 1; i < hueCounts.Length; i++)
         {

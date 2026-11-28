@@ -1,5 +1,6 @@
 namespace MusicVisualizer.Metadata;
 
+// Stores metadata information about a track
 public sealed class TrackInfo
 {
     public string? Title { get; set; }

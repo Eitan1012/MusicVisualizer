@@ -3,6 +3,7 @@ using NAudio.Dsp;
 
 namespace MusicVisualizer.Audio;
 
+// Analyzes audio using FFT
 public class AudioAnalyzer : ISampleProvider
 {
     private ISampleProvider? _source;
@@ -22,7 +23,7 @@ public class AudioAnalyzer : ISampleProvider
     {
         WaveFormat = format;
     }
-    
+    // Reads audio and convert it to mono
     public int Read(float[] buffer, int offset, int count)
     {
         if (_source is null)
@@ -48,6 +49,7 @@ public class AudioAnalyzer : ISampleProvider
         }
         return read;
     }
+    // Returns the last 2048 samples
     public float[] GetSamples()
     {
         float[] result = new float[_sampels.Length];
@@ -60,7 +62,7 @@ public class AudioAnalyzer : ISampleProvider
         }
         return result;
     }
-
+    // Processes live audio
     public void FeedLiveSamples(byte[] buffer, int count, int channels)
     {
         int frameSize= channels * sizeof(float);
@@ -83,12 +85,13 @@ public class AudioAnalyzer : ISampleProvider
             }
         }
     }
-
+    // Converts audio into frequency spectrum using FFT
     public float[] GetSpectrum()
     {
         float[] samples = GetSamples();
         int size = samples.Length;
         Complex[] fftBuffer = new Complex[size];
+    // Apply Hamming window
         for (int i = 0; i < size; i++)
         {
             fftBuffer[i].X = (float)(samples[i] * FastFourierTransform.HammingWindow(i, size));
@@ -104,6 +107,7 @@ public class AudioAnalyzer : ISampleProvider
         }
         return spectrum;
     }
+    // Groups the frequency spectrum into 64 bands
     public float[] GetBands()
     {
         float[] spectrum = GetSpectrum();
@@ -113,6 +117,7 @@ public class AudioAnalyzer : ISampleProvider
 
         for (int i = 0; i < bandsCount; i++)
         {
+    // Use nonlinear scaling to group frequencies        
             double startRatio = (double)i / bandsCount;
             double endRatio = (double)(i + 1) / bandsCount;
 

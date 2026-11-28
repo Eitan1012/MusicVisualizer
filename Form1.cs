@@ -4,6 +4,7 @@ using MusicVisualizer.Metadata;
 
 namespace MusicVisualizer;
 
+// Main application form
 public partial class Form1 : Form
 {
     private AudioPlayer _player = new AudioPlayer();
@@ -34,6 +35,7 @@ public partial class Form1 : Form
     {
         InitializeComponent();
         Text = "Music Visualizer";
+        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Button openButton = new Button();
         openButton.Text = "Open MP3";
         openButton.SetBounds(20,20,150,40);
@@ -92,6 +94,7 @@ public partial class Form1 : Form
         _bandsLabel.Visible = false;
        _visualizer.Size = new Size(480, 480);
        _visualizer.Location = new Point((ClientSize.Width - _visualizer.Width) / 2, (ClientSize.Height - _visualizer.Height) / 2);
+       // Center the visualizer when the form is resized
        Resize += (_, __) =>
        {
            _visualizer.Location = new Point((ClientSize.Width - _visualizer.Width) / 2, (ClientSize.Height - _visualizer.Height) / 2);
@@ -129,6 +132,7 @@ public partial class Form1 : Form
         liveTab.Cursor = Cursors.Hand;
         liveTab.FlatAppearance.MouseOverBackColor = Color.FromArgb(36, 65, 80);
         liveTab.FlatAppearance.MouseDownBackColor = Color.FromArgb(18, 92, 103);
+        // Initialize live audio capture
         async Task StartLiveAsync() 
         {
             if (_liveCapture != null)
@@ -189,11 +193,13 @@ public partial class Form1 : Form
         _metadataTimer.Interval = 1000;
         _metadataTimer.Tick += async (_, __) => await RefreshLiveTrackAsync();
         _metadataTimer.Start();
+        // Start live mode automatically
         Shown += async (_, __) =>
         {
             await StartLiveAsync();
         };
     }
+    // Handle keyboard shortcuts
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
         if (keyData == Keys.F11)
@@ -284,6 +290,7 @@ public partial class Form1 : Form
         
         
     }
+    // Update the visualizer with real time audio
     private void Timer_Tick(object sender, EventArgs e)
     {
 
@@ -410,6 +417,7 @@ public partial class Form1 : Form
     }
 
 
+// Refresh current track metadata
     private async Task RefreshLiveTrackAsync()
     {
         if (_liveCapture == null || _isReadingMetadata)
@@ -438,6 +446,8 @@ public partial class Form1 : Form
             _isReadingMetadata = false;
         }
         }
+
+        // Switch between fullscreen and windowed mode
         private void ToggleFullscreen()
     {
         if (!_isFullscreen)
